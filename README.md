@@ -1,2 +1,447 @@
 # ARBEE-S-BAKERY-OFFICIAL-WEBSITE
 ARBEES-BAKERY-OFFICIAL-WEBSITE
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+// ─────────────────────────────────────────────
+//  User class
+// ─────────────────────────────────────────────
+class User {
+    String name;
+    String email;
+    String password;
+    String address;
+
+    public User(String name, String email, String password, String address) {
+        this.name     = name;
+        this.email    = email;
+        this.password = password;
+        this.address  = address;
+    }
+}
+
+// ─────────────────────────────────────────────
+//  OrderItem class
+// ─────────────────────────────────────────────
+class OrderItem {
+    String itemName;
+    int    quantity;
+    double price;
+    double total;
+
+    public OrderItem(String itemName, int quantity, double price) {
+        this.itemName = itemName;
+        this.quantity = quantity;
+        this.price    = price;
+        this.total    = price * quantity;
+    }
+}
+
+// ─────────────────────────────────────────────
+//  OrderRecord — one full completed order
+// ─────────────────────────────────────────────
+class OrderRecord {
+    String               orderRef;
+    String               customerName;
+    String               customerEmail;
+    String               deliveryAddress;
+    String               paymentMethod;
+    String               timestamp;
+    String               status;
+    ArrayList<OrderItem> items;
+    double               grandTotal;
+
+    public OrderRecord(String orderRef, String customerName, String customerEmail,
+                       String deliveryAddress, String paymentMethod,
+                       String timestamp, ArrayList<OrderItem> items, double grandTotal) {
+        this.orderRef        = orderRef;
+        this.customerName    = customerName;
+        this.customerEmail   = customerEmail;
+        this.deliveryAddress = deliveryAddress;
+        this.paymentMethod   = paymentMethod;
+        this.timestamp       = timestamp;
+        this.status          = "Pending";
+        this.items           = new ArrayList<>(items);
+        this.grandTotal      = grandTotal;
+    }
+}
+
+// ─────────────────────────────────────────────
+//  Main application
+// ─────────────────────────────────────────────
+public class ArbeesBakery {
+
+    static Scanner                sc           = new Scanner(System.in);
+    static ArrayList<User>        users        = new ArrayList<>();
+    static ArrayList<OrderItem>   cart         = new ArrayList<>();
+    static ArrayList<OrderRecord> orderHistory = new ArrayList<>();
+    static User                   loggedIn     = null;
+    static int                    orderCounter = 1000;
+
+    // ── Admin credentials ──────────────────────
+    static final String ADMIN_USER = "admin";
+    static final String ADMIN_PASS = "admin123";
+
+    // ── Menu data ──────────────────────────────
+    static ArrayList<String> itemNames  = new ArrayList<>();
+    static ArrayList<Double> itemPrices = new ArrayList<>();
+
+    static {
+        String[] names = {
+            "Pandesal", "Monay", "Ensaymada",
+            "Spanish Bread", "Egg Bread", "Torta", "Star Bread",
+            "Francis", "Ube Cheese Pandesal", "Choco German",
+            "Siacoy", "Doughnut", "Banana Bread", "Slice Bread", "Chiffon Cake"
+        };
+        double[] prices = {
+            5.00, 6.00, 6.00, 7.00, 10.00, 10.00, 6.00,
+            6.00, 8.00, 6.00, 6.00, 6.00, 55.00, 65.00, 250.00
+        };
+        for (int i = 0; i < names.length; i++) {
+            itemNames.add(names[i]);
+            itemPrices.add(prices[i]);
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  ENTRY POINT
+    // ══════════════════════════════════════════
+    public static void main(String[] args) {
+        printBanner();
+        viewMenu();
+        homeMenu();
+        System.out.println("\n  Thank you for visiting ARBEE'S BAKERY! Goodbye!");
+    }
+
+    // ══════════════════════════════════════════
+    //  BANNER
+    // ══════════════════════════════════════════
+    static void printBanner() {
+        System.out.println();
+        System.out.println("  ╔══════════════════════════════════════════╗");
+        System.out.println("  ║                                          ║");
+        System.out.println("  ║          ARBEE'S BAKERY                  ║");
+        System.out.println("  ║     Freshly Baked Goodness Every Day     ║");
+        System.out.println("  ║                                          ║");
+        System.out.println("  ╚══════════════════════════════════════════╝");
+    }
+
+    // ══════════════════════════════════════════
+    //  VIEW MENU
+    // ══════════════════════════════════════════
+    static void viewMenu() {
+        System.out.println("\n╔═════════════════════════════════════════════╗");
+        System.out.println("║          ARBEE'S BAKERY MENU                ║");
+        System.out.println("╠═════╦═══════════════════════╦═══════════════╣");
+        System.out.println("║ No. ║ Item                  ║ Price (PHP)   ║");
+        System.out.println("╠═════╬═══════════════════════╬═══════════════╣");
+        for (int i = 0; i < itemNames.size(); i++) {
+            System.out.printf("║  %-2d ║ %-21s ║ %13.2f ║%n",
+                i + 1, itemNames.get(i), itemPrices.get(i));
+        }
+        System.out.println("╚═════╩═══════════════════════╩═══════════════╝");
+    }
+
+    // ══════════════════════════════════════════
+    //  HOME MENU
+    // ══════════════════════════════════════════
+    static void homeMenu() {
+        boolean running = true;
+        while (running) {
+            System.out.println("\n╔══════════════════════════════════╗");
+            System.out.println("║      HOW CAN WE SERVE YOU?       ║");
+            System.out.println("╠══════════════════════════════════╣");
+            System.out.println("║  [1] Sign Up                     ║");
+            System.out.println("║  [2] Customer Login              ║");
+            System.out.println("║  [3] Staff Login                 ║");
+            System.out.println("║  [4] Exit                        ║");
+            System.out.println("╚══════════════════════════════════╝");
+            System.out.print("  Enter choice: ");
+
+            int choice = validateInt(1, 4);
+            switch (choice) {
+                case 1 -> signUp();
+                case 2 -> login();
+                case 3 -> adminLogin();
+                case 4 -> running = false;
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  SIGN UP
+    // ══════════════════════════════════════════
+    static void signUp() {
+        System.out.println("\n  ── SIGN UP ──────────────────────────");
+        System.out.print("  Full Name    : ");
+        String name  = sc.nextLine().trim();
+
+        System.out.print("  Email        : ");
+        String email = sc.nextLine().trim().toLowerCase();
+
+        for (User u : users) {
+            if (u.email.equals(email)) {
+                System.out.println("  Email already registered. Please log in.");
+                return;
+            }
+        }
+
+        System.out.print("  Password     : ");
+        String pass = sc.nextLine().trim();
+
+        System.out.print("  Address      : ");
+        String address = sc.nextLine().trim();
+
+        users.add(new User(name, email, pass, address));
+        System.out.println("  Account created successfully! You may now log in.");
+    }
+
+    // ══════════════════════════════════════════
+    //  CUSTOMER LOGIN
+    // ══════════════════════════════════════════
+    static void login() {
+        System.out.println("\n  ── CUSTOMER LOGIN ──────────────────");
+        System.out.print("  Email    : ");
+        String email = sc.nextLine().trim().toLowerCase();
+        System.out.print("  Password : ");
+        String pass  = sc.nextLine().trim();
+
+        for (User u : users) {
+            if (u.email.equals(email) && u.password.equals(pass)) {
+                loggedIn = u;
+                customerMenu();
+                return;
+            }
+        }
+        System.out.println("  Invalid email or password. Please try again.");
+    }
+
+    // ══════════════════════════════════════════
+    //  CUSTOMER MENU
+    // ══════════════════════════════════════════
+    static void customerMenu() {
+        boolean active = true;
+        while (active) {
+            System.out.println("\n╔══════════════════════════════════╗");
+            System.out.printf( "║  Hello, %-24s║%n", loggedIn.name + "!");
+            System.out.println("╠══════════════════════════════════╣");
+            System.out.println("║  [1] Place an Order              ║");
+            System.out.println("║  [2] My Order History            ║");
+            System.out.println("║  [3] Edit Profile                ║");
+            System.out.println("║  [4] Logout                      ║");
+            System.out.println("╚══════════════════════════════════╝");
+            System.out.print("  Enter choice: ");
+
+            int choice = validateInt(1, 4);
+            switch (choice) {
+                case 1 -> orderingSystem();
+                case 2 -> viewMyOrders();
+                case 3 -> editProfile();
+                case 4 -> {
+                    System.out.println("\n  Logged out. See you again, " + loggedIn.name + "!");
+                    loggedIn = null;
+                    active   = false;
+                    printBanner();
+                    viewMenu();
+                }
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  CUSTOMER — View Own Order History
+    // ══════════════════════════════════════════
+    static void viewMyOrders() {
+        System.out.println("\n╔══════════════════════════════════════════════════════════════╗");
+        System.out.println("║                    MY ORDER HISTORY                          ║");
+        System.out.println("╚══════════════════════════════════════════════════════════════╝");
+
+        boolean found = false;
+        for (OrderRecord rec : orderHistory) {
+            if (rec.customerEmail.equals(loggedIn.email)) {
+                found = true;
+                System.out.println("\n  ┌──────────────────────────────────────────────────────────┐");
+                System.out.println("  │  Order Ref    : " + rec.orderRef);
+                System.out.println("  │  Date & Time  : " + rec.timestamp);
+                System.out.println("  │  Status       : " + rec.status);
+                System.out.println("  │  Address      : " + rec.deliveryAddress);
+                System.out.println("  │  Payment      : " + rec.paymentMethod);
+                System.out.println("  ├──────────────────────────────────────────────────────────┤");
+                System.out.printf( "  │  %-24s  %4s  %12s  │%n", "Item", "Qty", "Amount (PHP)");
+                System.out.println("  ├──────────────────────────────────────────────────────────┤");
+                for (OrderItem oi : rec.items) {
+                    System.out.printf("  │  %-24s  x%-3d  %12.2f  │%n",
+                        oi.itemName, oi.quantity, oi.total);
+                }
+                System.out.println("  ├──────────────────────────────────────────────────────────┤");
+                System.out.printf( "  │  %-24s        %12.2f  │%n", "GRAND TOTAL", rec.grandTotal);
+                System.out.println("  └──────────────────────────────────────────────────────────┘");
+            }
+        }
+        if (!found) {
+            System.out.println("  You have no orders yet.");
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  CUSTOMER — Edit Profile
+    // ══════════════════════════════════════════
+    static void editProfile() {
+        boolean editing = true;
+        while (editing) {
+            System.out.println("\n╔══════════════════════════════════╗");
+            System.out.println("║           EDIT PROFILE           ║");
+            System.out.println("╠══════════════════════════════════╣");
+            System.out.println("║  [1] Update Address              ║");
+            System.out.println("║  [2] Update Password             ║");
+            System.out.println("║  [3] Back                        ║");
+            System.out.println("╚══════════════════════════════════╝");
+            System.out.print("  Enter choice: ");
+            int choice = validateInt(1, 3);
+
+            switch (choice) {
+                case 1 -> {
+                    System.out.println("  Current Address : " + loggedIn.address);
+                    System.out.print("  New Address     : ");
+                    String newAddr = sc.nextLine().trim();
+                    loggedIn.address = newAddr;
+                    System.out.println("   Address updated successfully!");
+                }
+                case 2 -> {
+                    System.out.print("  Current Password : ");
+                    String oldPass = sc.nextLine().trim();
+                    if (!oldPass.equals(loggedIn.password)) {
+                        System.out.println("   Incorrect current password.");
+                    } else {
+                        System.out.print("  New Password     : ");
+                        String newPass = sc.nextLine().trim();
+                        System.out.print("  Confirm Password : ");
+                        String confirmPass = sc.nextLine().trim();
+                        if (!newPass.equals(confirmPass)) {
+                            System.out.println("   Passwords do not match.");
+                        } else {
+                            loggedIn.password = newPass;
+                            System.out.println("   Password updated successfully!");
+                        }
+                    }
+                }
+                case 3 -> editing = false;
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  ADMIN LOGIN
+    // ══════════════════════════════════════════
+    static void adminLogin() {
+        System.out.println("\n  ── STAFF LOGIN ─────────────────────");
+        System.out.print("  Username : ");
+        String username = sc.nextLine().trim();
+        System.out.print("  Password : ");
+        String pass     = sc.nextLine().trim();
+
+        if (username.equals(ADMIN_USER) && pass.equals(ADMIN_PASS)) {
+            System.out.println("\n  Staff access granted. Welcome, " + ADMIN_USER + "!");
+            adminDashboard();
+        } else {
+            System.out.println("  Invalid credentials. Access denied.");
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  ADMIN DASHBOARD
+    // ══════════════════════════════════════════
+    static void adminDashboard() {
+        boolean adminRunning = true;
+        while (adminRunning) {
+            System.out.println("\n╔══════════════════════════════════════╗");
+            System.out.println("║          STAFF DASHBOARD             ║");
+            System.out.println("╠══════════════════════════════════════╣");
+            System.out.println("║  [1] View All Registered Customers   ║");
+            System.out.println("║  [2] View All Order History          ║");
+            System.out.println("║  [3] View Sales Summary              ║");
+            System.out.println("║  [4] View Current Menu & Prices      ║");
+            System.out.println("║  [5] Manage Menu Items               ║");
+            System.out.println("║  [6] Mark Order as Delivered         ║");
+            System.out.println("║  [7] Logout Staff                    ║");
+            System.out.println("╚══════════════════════════════════════╝");
+            System.out.print("  Enter choice: ");
+
+            int choice = validateInt(1, 7);
+            switch (choice) {
+                case 1 -> adminViewCustomers();
+                case 2 -> adminViewOrders();
+                case 3 -> adminViewSales();
+                case 4 -> viewMenu();
+                case 5 -> adminManageMenu();
+                case 6 -> adminMarkDelivered();
+                case 7 -> {
+                    System.out.println("\n  Staff logged out. Returning to main menu...");
+                    adminRunning = false;
+                }
+            }
+        }
+    }
+
+    // ── Admin: View All Customers ──────────────
+    static void adminViewCustomers() {
+        System.out.println("\n╔════════════════════════════════════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                       REGISTERED CUSTOMERS                                                          ║");
+        System.out.println("╠══════╦════════════════════╦══════════════════════╦══════════════════════════════════════════════════╣");
+        System.out.println("║  No. ║ Name               ║ Email                ║ Address                                          ║");
+        System.out.println("╠══════╬════════════════════╬══════════════════════╬══════════════════════════════════════════════════╣");
+        if (users.isEmpty()) {
+            System.out.println("║                    No registered customers yet.                                                 ║");
+        } else {
+            for (int i = 0; i < users.size(); i++) {
+                User u = users.get(i);
+                System.out.printf("║  %-3d ║ %-18s ║ %-20s ║ %-22s ║%n",
+                    i + 1, u.name, u.email, u.address);
+            }
+        }
+        System.out.println("╚══════╩════════════════════╩══════════════════════╩═════════════════════════════════════════════════╝");
+        System.out.printf("  Total registered customers: %d%n", users.size());
+    }
+
+    // ── Admin: View All Orders ─────────────────
+    static void adminViewOrders() {
+        System.out.println("\n╔══════════════════════════════════════════════════════════════╗");
+        System.out.println("║                     ORDER HISTORY                            ║");
+        System.out.println("╚══════════════════════════════════════════════════════════════╝");
+        if (orderHistory.isEmpty()) {
+            System.out.println("  No orders placed yet.");
+            return;
+        }
+        for (int i = 0; i < orderHistory.size(); i++) {
+            OrderRecord rec = orderHistory.get(i);
+            System.out.println("\n  ── Order #" + (i + 1) + " ─────────────────────────────────────");
+            System.out.println("  Order Ref      : " + rec.orderRef);
+            System.out.println("  Date & Time    : " + rec.timestamp);
+            System.out.println("  Status         : " + rec.status);
+            System.out.println("  Customer       : " + rec.customerName);
+            System.out.println("  Delivery Addr  : " + rec.deliveryAddress);
+            System.out.println("  Payment Method : " + rec.paymentMethod);
+            System.out.println("  ┌──────────────────────────────────────────────────┐");
+            System.out.printf( "  │  %-24s  %4s  %12s  │%n", "Item", "Qty", "Amount (PHP)");
+            System.out.println("  ├──────────────────────────────────────────────────┤");
+            for (OrderItem oi : rec.items) {
+                System.out.printf("  │  %-24s  x%-3d  %12.2f  │%n",
+                    oi.itemName, oi.quantity, oi.total);
+            }
+            System.out.println("  ├──────────────────────────────────────────────────┤");
+            System.out.printf( "  │  %-24s        %12.2f  │%n", "GRAND TOTAL", rec.grandTotal);
+            System.out.println("  └──────────────────────────────────────────────────┘");
+        }
+        System.out.printf("%n  Total orders placed: %d%n", orderHistory.size());
+    }
+
+    // ── Admin: Sales Summary ───────────────────
+    static void adminViewSales() {
+        System.out.println("\n╔══════════════════════════════════════════════════════════════╗");
+        System.out.println("║                     SALES SUMMARY                            ║");
+        System.out.println("╚══════════════════════════════════════════════════════════════╝");
+        if (orderHistory.isEmpty()) {
+          
